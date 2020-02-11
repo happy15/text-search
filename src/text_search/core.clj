@@ -176,6 +176,47 @@
                     (inc times)))))))))))
 
 
+(defn search-kmp-seq2 [pattern text-seq]
+  "This KMP implementation differs from (search-kmp-seq) in that it uses (cond) instead of (if)."
+  (let [pat     (vec pattern)
+        pat-len (count pat)
+        lps     (lps pat)]
+    (println pattern pat-len)
+    (println lps)
+    (loop [ts    text-seq
+           ti    0
+           pi    0
+           acc   []
+           times 0]
+      (let [tc (first ts)]
+        (do
+          ;        (when (> times 50) (error "boom"))
+          (println (str "#" times ":") ti tc pi acc)
+          (cond
+            ;finished reading of text sequence, return result
+            (nil? tc)                                                    (do
+                                                                           (println "times =" times)
+                                                                           (println "len(text) =" ti)
+                                                                           (if (= pi pat-len)
+                                                                             ;there may be a match at last
+                                                                             (conj acc (- ti pat-len))
+                                                                             acc))
+            ;found one match
+            (= pi pat-len)                                               (recur ts
+                                                                           ti
+                                                                           (get lps (dec pi))
+                                                                           (conj acc (- ti pat-len))
+                                                                           (inc times))
+            (= (get pat pi) tc)                                          (recur (rest ts) (inc ti) (inc pi) acc (inc times))
+            ;first character or pattern already mismatched,
+            ;thus comparing to next text character with first of pattern character on next iteration.
+            (= pi 0)                                                     (recur (rest ts) (inc ti) 0 acc (inc times))
+            ;try right shift pattern according to lps
+            :else                                                        (recur ts ti
+                                                                           (get lps (dec pi)) acc
+                                                                           (inc times))))))))
+
+
 (def pattern "aaaaab")
 (def text "aaaaaaaaaaaaaaaab")
 
@@ -197,6 +238,8 @@
 (search-kmp2 pattern text)
 
 (search-kmp-seq pattern (lazy-seq text))
+
+(search-kmp-seq2 pattern (lazy-seq text))
 
 
 (vec pattern)
